@@ -69,58 +69,6 @@ Public Class CServer
 
     End Sub
 
-    Public Sub New(ByVal serverName As String, ByVal DBName As String, Optional ByVal uid As String = "", _
-                   Optional ByVal pwd As String = "", Optional TCPPort As String = "3306", Optional ByVal db As DBTYPE = DBTYPE.MYSQL)
-        _type = db
-        If (db = DBTYPE.MYSQL) Then
-
-            If (uid = "" Or pwd = "") Then
-                Throw New AggregateException("Username and password for MySQL not specified.")
-            End If
-
-            _connectionString = "Server=" & serverName & ";" & _
-                                "Database=" & DBName & ";" & _
-                                "Uid=" & uid & ";" & _
-                                "Pwd=" & pwd & ";" & _
-                                "Port=" & TCPPort & ";" & _
-                                "Allow Zero Datetime=true;" & _
-                                "Connect Timeout=5000;"
-
-            Try
-                _connection = New MySqlConnection(_connectionString)
-                _connection.Open()
-                _open = True
-                _server = serverName
-                _dataBase = DBName
-            Catch ex As MySqlException
-                MsgBox(ex.Message & " " & serverName & " was not found.")
-                _connection.Dispose()
-                _connection = Nothing
-                Throw New AggregateException(ex.Message & " " & serverName & " was not found.")
-            End Try
-        Else
-            _connectionString = "packet size=4096;" & _
-                                "integrated security=SSPI;" & _
-                                "data source=""" & serverName & """;" & _
-                                "persist security info=False;" & _
-                                "initial catalog=" & DBName
-
-            Try
-                _connection = New SqlClient.SqlConnection(_connectionString)
-                _connection.Open()
-                _open = True
-                _server = serverName
-                _dataBase = DBName
-            Catch ex As SqlClient.SqlException
-                MsgBox(ex.Message)
-                _connection.Dispose()
-                _connection = Nothing
-                Throw New AggregateException(ex.Message)
-            End Try
-
-        End If
-    End Sub
-
     Public ReadOnly Property dbType() As DBTYPE
         Get
             Return _type
@@ -141,7 +89,6 @@ Public Class CServer
 
     Public Sub close()
         Dim sql As String = ""
-        Dim logout As String = DateTime.Now
 
         _connection.Close()
         _connection.Dispose()
@@ -158,7 +105,7 @@ Public Class CServer
 
     Public Function callStoredProc(ByVal procedure As String, ByVal ParamArray params() As SQLLib.sqlServerParam)
         If (_type <> SQLLib.DBTYPE.SQLSERVER) Then
-            Throw New AggregateException("Stored Procedures not supported by MySQL")
+            Throw New AggregateException("This library does not yet support MySQL stored procedures.")
         End If
 
         Try
